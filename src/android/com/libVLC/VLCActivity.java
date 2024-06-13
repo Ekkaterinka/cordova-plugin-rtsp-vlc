@@ -1,5 +1,6 @@
 package com.libVLC;
 
+import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -9,6 +10,7 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -130,8 +132,10 @@ public class VLCActivity extends Activity implements VlcListener, View.OnClickLi
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        getWindow().setDecorFitsSystemWindows(false);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getWindow().setDecorFitsSystemWindows(false);
+        }
 
         activity = this;
         ActionBar actionBar = activity.getActionBar();
@@ -197,7 +201,7 @@ public class VLCActivity extends Activity implements VlcListener, View.OnClickLi
     public void onPlayVlc() {
         _sendBroadCast("onPlayVlc");
 
-        Drawable drawableIcon = getResources().getDrawable(_getResource("ic_pause_white_24dp", "drawable"));
+        @SuppressLint("UseCompatLoadingForDrawables") Drawable drawableIcon = getResources().getDrawable(_getResource("ic_pause_white_24dp", "drawable"));
         bStartStop.setImageDrawable(drawableIcon);
     }
 
@@ -205,7 +209,7 @@ public class VLCActivity extends Activity implements VlcListener, View.OnClickLi
     public void onPauseVlc() {
         _sendBroadCast("onPauseVlc");
 
-        Drawable drawableIcon = getResources().getDrawable(_getResource("ic_play_arrow_white_24dp", "drawable"));
+        @SuppressLint("UseCompatLoadingForDrawables") Drawable drawableIcon = getResources().getDrawable(_getResource("ic_play_arrow_white_24dp", "drawable"));
         bStartStop.setImageDrawable(drawableIcon);
     }
 
@@ -213,7 +217,7 @@ public class VLCActivity extends Activity implements VlcListener, View.OnClickLi
     public void onStopVlc() {
         _sendBroadCast("onStopVlc");
 
-        Drawable drawableIcon = getResources().getDrawable(_getResource("ic_play_arrow_white_24dp", "drawable"));
+        @SuppressLint("UseCompatLoadingForDrawables") Drawable drawableIcon = getResources().getDrawable(_getResource("ic_play_arrow_white_24dp", "drawable"));
         bStartStop.setImageDrawable(drawableIcon);
     }
 
@@ -221,7 +225,7 @@ public class VLCActivity extends Activity implements VlcListener, View.OnClickLi
     public void onVideoEnd() {
         _sendBroadCast("onVideoEnd");
 
-        Drawable drawableIcon = getResources().getDrawable(_getResource("ic_play_arrow_white_24dp", "drawable"));
+        @SuppressLint("UseCompatLoadingForDrawables") Drawable drawableIcon = getResources().getDrawable(_getResource("ic_play_arrow_white_24dp", "drawable"));
         bStartStop.setImageDrawable(drawableIcon);
     }
 
@@ -233,49 +237,53 @@ public class VLCActivity extends Activity implements VlcListener, View.OnClickLi
             vlcVideoLibrary.stop();
         }
 
-        Drawable drawableIcon = getResources().getDrawable(_getResource("ic_play_arrow_white_24dp", "drawable"));
+        @SuppressLint("UseCompatLoadingForDrawables") Drawable drawableIcon = getResources().getDrawable(_getResource("ic_play_arrow_white_24dp", "drawable"));
         bStartStop.setImageDrawable(drawableIcon);
     }
 
     private void _initPlayer() {
         new Timer().schedule(
-            new TimerTask() {
-                @Override
-                public void run() {
-                    if (_hideControls) {
-                        Thread thread = new Thread() {
-                            @Override
-                            public void run() {
-                                runOnUiThread(
-                                    new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            mediaPlayerControls.setVisibility(View.GONE); 
-                                        }
-                                    }
-                                );
-                            }
-                        };
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (_hideControls) {
+                            Thread thread = new Thread() {
+                                @Override
+                                public void run() {
+                                    runOnUiThread(
+                                            new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    mediaPlayerControls.setVisibility(View.GONE);
+                                                }
+                                            }
+                                    );
+                                }
+                            };
 
-                        thread.start();
-                    }
-
-                    if (_autoPlay && vlcVideoLibrary != null && _url != null) {
-                        if (vlcVideoLibrary.isPlaying()) {
-                            vlcVideoLibrary.stop();
+                            thread.start();
                         }
 
-                        vlcVideoLibrary.play(_url);
+                        if (_autoPlay && vlcVideoLibrary != null && _url != null) {
+                            if (vlcVideoLibrary.isPlaying()) {
+                                vlcVideoLibrary.stop();
+                            }
+
+                            vlcVideoLibrary.play(_url);
+                        }
                     }
-                }
-            },
-            300
+                },
+                300
         );
     }
 
     private void _broadcastRCV() {
         IntentFilter filter = new IntentFilter(VideoPlayerVLC.BROADCAST_METHODS);
-        activity.registerReceiver(br, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            activity.registerReceiver(br, filter, Context.RECEIVER_EXPORTED);
+        } else {
+            activity.registerReceiver(br, filter);
+        }
     }
 
     private void _UIListener() {

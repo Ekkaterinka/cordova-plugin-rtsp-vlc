@@ -1,10 +1,12 @@
 package com.libVLC;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.util.Log;
 
 import org.apache.cordova.CallbackContext;
@@ -158,7 +160,11 @@ public class VideoPlayerVLC extends CordovaPlugin {
 
     private void _broadcastRCV() {
         IntentFilter filter = new IntentFilter(VLCActivity.BROADCAST_LISTENER);
-        activity.registerReceiver(br, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            activity.registerReceiver(br, filter, Context.RECEIVER_EXPORTED);
+        } else {
+            activity.registerReceiver(br, filter);
+        }
     }
 
     private void _cordovaSendResult(String event, String data) {
